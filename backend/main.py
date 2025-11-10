@@ -412,7 +412,7 @@ def validate_email(email):
         return False
     
     email = email.strip().lower()
-    email_pattern = r'^[a-zA-Z0-9._%+-]+@thapar\.edu$'
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@gmail\.com$'
     
     return re.match(email_pattern, email) is not None
 
@@ -606,11 +606,11 @@ async def api_register(participant: ParticipantRegistration):
     if len(participant.name) < 3:
         raise HTTPException(status_code=400, detail="Name must be at least 3 characters")
     
-    if '@thapar.edu' not in participant.email.lower():
-        raise HTTPException(
-            status_code=400, 
-            detail="Valid Thapar email required (must end with @thapar.edu)"
-        )
+    # if '@thapar.edu' not in participant.email.lower():
+    #     raise HTTPException(
+    #         status_code=400, 
+    #         detail="Valid Thapar email required (must end with @thapar.edu)"
+    #     )
     
     mobile_clean = participant.mobile.replace('+', '').replace(' ', '').replace('-', '')
     if len(mobile_clean) < 10:

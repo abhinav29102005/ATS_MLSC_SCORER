@@ -18,10 +18,10 @@ const LoginPage = ({ onLogin }) => {
       return;
     }
 
-    if (!email.endsWith('@thapar.edu')) {
-      setError('Email must end with @thapar.edu');
-      return;
-    }
+    // if (!email.endsWith('@thapar.edu')) {
+    //   setError('Email must end with @thapar.edu');
+    //   return;
+    // }
 
     setLoading(true);
     try {
@@ -64,13 +64,13 @@ const LoginPage = ({ onLogin }) => {
           </div>
 
           <div className="form-group">
-            <label>Email (@thapar.edu)</label>
+            <label>Email</label>
             <input 
               type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input-field"
-              placeholder="student@thapar.edu"
+              placeholder="email"
             />
           </div>
           
