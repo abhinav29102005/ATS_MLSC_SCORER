@@ -18,11 +18,6 @@ const LoginPage = ({ onLogin }) => {
       return;
     }
 
-    // if (!email.endsWith('@thapar.edu')) {
-    //   setError('Email must end with @thapar.edu');
-    //   return;
-    // }
-
     setLoading(true);
     try {
       const response = await apiService.register(name, email, mobile);
@@ -41,7 +36,7 @@ const LoginPage = ({ onLogin }) => {
     <div className="page-container">
       <div className="header">
         <div className="logo">
-          <img src='/mlsc.png' height={150} alt="logo" />
+          <img src='/mlsc.png' height={60} alt="logo" />
         </div>
       </div>
       
@@ -51,7 +46,7 @@ const LoginPage = ({ onLogin }) => {
         
         {error && <div className="error-message">{error}</div>}
         
-        <div>
+        <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Full Name</label>
             <input 
@@ -60,6 +55,7 @@ const LoginPage = ({ onLogin }) => {
               onChange={(e) => setName(e.target.value)}
               className="input-field"
               placeholder="Enter your full name"
+              required
             />
           </div>
 
@@ -70,7 +66,8 @@ const LoginPage = ({ onLogin }) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input-field"
-              placeholder="email"
+              placeholder="email@example.com"
+              required
             />
           </div>
           
@@ -82,18 +79,18 @@ const LoginPage = ({ onLogin }) => {
               onChange={(e) => setMobile(e.target.value)}
               className="input-field"
               placeholder="+91 XXXXX XXXXX"
+              required
             />
           </div>
           
           <button 
-            type="button" 
-            onClick={handleSubmit} 
+            type="submit"
             className="login-button"
             disabled={loading}
           >
             {loading ? 'REGISTERING...' : 'REGISTER / LOGIN'}
           </button>
-        </div>
+        </form>
       </div>
     </div>
   );
@@ -103,6 +100,7 @@ const HomePage = ({ onNavigate, onLogout }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [jobDescription, setJobDescription] = useState('');
+  const [jdEducation, setJdEducation] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -111,11 +109,13 @@ const HomePage = ({ onNavigate, onLogout }) => {
 
   useEffect(() => {
     loadUploadCount();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadUploadCount = async () => {
     try {
       const participantId = localStorage.getItem('participantId');
+      if (!participantId) return;
+      
       const data = await apiService.getUploadCount(participantId);
       setUploadCount(data.upload_count);
     } catch (err) {
@@ -136,6 +136,7 @@ const HomePage = ({ onNavigate, onLogout }) => {
       }
       setSelectedFile(file);
       setError('');
+      setSuccess('');
     }
   };
 
@@ -164,6 +165,7 @@ const HomePage = ({ onNavigate, onLogout }) => {
       }
       setSelectedFile(file);
       setError('');
+      setSuccess('');
     }
   };
 
@@ -190,12 +192,18 @@ const HomePage = ({ onNavigate, onLogout }) => {
     setLoading(true);
     try {
       const participantId = localStorage.getItem('participantId');
-      const result = await apiService.submitResume(participantId, selectedFile, jobDescription);
+      const result = await apiService.submitResume(
+        participantId, 
+        selectedFile, 
+        jobDescription,
+        jdEducation
+      );
       
-      setSuccess(`Submission successful! Your score: ${result.score}% - ${result.verdict}`);
+      setSuccess(`Submission successful! Your ATS Score: ${result.score}%`);
       setScoreResult(result);
       setSelectedFile(null);
       setJobDescription('');
+      setJdEducation('');
       await loadUploadCount();
     } catch (err) {
       setError(err.message || 'Submission failed');
@@ -208,14 +216,14 @@ const HomePage = ({ onNavigate, onLogout }) => {
     <div className="page-container">
       <div className="header">
         <div className="logo">
-          <img src='/mlsc.png' alt='logo' height={60}></img>
+          <img src='/mlsc.png' alt='logo' height={60} />
         </div>
-        <button className="logout-button" onClick={onLogout}>⊗</button>
+        <button className="logout-button" onClick={onLogout} title="Logout">⊗</button>
       </div>
 
       <div className="home-content-new">
         <div className="center-title">
-          <h1 className="main-title">Perfect CV</h1>
+          <h1 className="main-title">Perfect CV Match</h1>
           <p>Welcome, {localStorage.getItem('participantName')} | Uploads: {uploadCount}/5</p>
         </div>
         
@@ -237,6 +245,13 @@ const HomePage = ({ onNavigate, onLogout }) => {
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => document.getElementById('fileInput').click()}
+            role="button"
+            tabIndex={0}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                document.getElementById('fileInput').click();
+              }
+            }}
           >
             <div className="upload-icon">
               <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
@@ -245,38 +260,79 @@ const HomePage = ({ onNavigate, onLogout }) => {
               </svg>
             </div>
             <p className="upload-text">
-              {selectedFile ? selectedFile.name : 'Hold & Pull files to Upload'}
+              {selectedFile ? selectedFile.name : 'Drag & drop or click to upload'}
             </p>
             <input 
               id="fileInput"
               type="file" 
               onChange={handleFileChange}
               accept=".pdf"
+              style={{ display: 'none' }}
             />
           </div>
 
-          <input 
-            type="text" 
+          <textarea
             placeholder="Job Description (min 50 chars)" 
             className="link-input"
             value={jobDescription}
             onChange={(e) => setJobDescription(e.target.value)}
+            rows={4}
+            style={{ resize: 'vertical', fontFamily: 'Courier New, monospace' }}
+          />
+          
+          <input 
+            type="text" 
+            placeholder="Education Requirements (optional)" 
+            className="link-input"
+            value={jdEducation}
+            onChange={(e) => setJdEducation(e.target.value)}
           />
           
           <button 
             className="submit-button" 
             onClick={handleSubmit}
-            disabled={loading || uploadCount >= 10}
+            disabled={loading || uploadCount >= 5}
           >
-            {loading ? 'Submitting...' : 'Submit CV'}
+            {loading ? 'Analyzing Resume...' : 'Submit & Get ATS Score'}
           </button>
 
           {scoreResult && (
             <div className="score-result">
-              <h3>Score: {scoreResult.score}%</h3>
-              <p>Verdict: {scoreResult.verdict}</p>
-              <p>Skills: {scoreResult.skills.join(', ')}</p>
-              <p>Experience: {scoreResult.experience_years} years</p>
+              <h3>ATS Score: {scoreResult.score}% - {scoreResult.verdict}</h3>
+              
+              <div className="score-breakdown">
+                <h4>Score Breakdown:</h4>
+                <p>✓ Skills Match: {scoreResult.breakdown.skills_match}/30</p>
+                <p>✓ Education: {scoreResult.breakdown.education}/20</p>
+                <p>✓ Experience: {scoreResult.breakdown.experience}/20</p>
+                <p>✓ Skills in Projects: {scoreResult.breakdown.projects}/15</p>
+                <p>✓ Keyword Relevance: {scoreResult.breakdown.keyword_relevance}/10</p>
+                <p>✓ Resume Quality: {scoreResult.breakdown.resume_quality}/5</p>
+              </div>
+              
+              <p><strong>Detected Skills:</strong> {scoreResult.skills.length > 0 ? scoreResult.skills.join(', ') : 'None detected'}</p>
+              <p><strong>Matched Skills:</strong> {scoreResult.matched_skills.length > 0 ? scoreResult.matched_skills.join(', ') : 'None matched'}</p>
+              <p><strong>Experience:</strong> {scoreResult.experience_years} years</p>
+              <p><strong>Keyword Similarity:</strong> {scoreResult.keyword_similarity}%</p>
+              <p><strong>Plagiarism Score:</strong> {scoreResult.plagiarism_score}%</p>
+              
+              {scoreResult.feedback && scoreResult.feedback.length > 0 && (
+                <div style={{ marginTop: '10px' }}>
+                  <h4>Feedback:</h4>
+                  {scoreResult.feedback.map((item, idx) => (
+                    <p key={idx}>• {item}</p>
+                  ))}
+                </div>
+              )}
+              
+              {scoreResult.penalties && scoreResult.penalties.length > 0 && (
+                <div style={{ marginTop: '10px' }}>
+                  <h4>Penalties:</h4>
+                  {scoreResult.penalties.map((item, idx) => (
+                    <p key={idx} style={{color: '#c62828'}}>⚠ {item}</p>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -292,14 +348,19 @@ const MyScoresPage = ({ onNavigate, onLogout }) => {
 
   useEffect(() => {
     loadScores();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadScores = async () => {
     try {
       const participantId = localStorage.getItem('participantId');
+      if (!participantId) {
+        setLoading(false);
+        return;
+      }
+      
       const data = await apiService.getParticipantScores(participantId);
-      setScores(data.scores);
-      setBestScore(data.best_score);
+      setScores(data.scores || []);
+      setBestScore(data.best_score || null);
     } catch (err) {
       console.error('Failed to load scores:', err);
     } finally {
@@ -311,9 +372,9 @@ const MyScoresPage = ({ onNavigate, onLogout }) => {
     <div className="page-container">
       <div className="header">
         <div className="logo">
-          <img src='/mlsc.png' alt='logo' height={60}></img>
+          <img src='/mlsc.png' alt='logo' height={60} />
         </div>
-        <button className="logout-button" onClick={onLogout}>⊗</button>
+        <button className="logout-button" onClick={onLogout} title="Logout">⊗</button>
       </div>
 
       <div className="leaderboard-content">
@@ -322,7 +383,7 @@ const MyScoresPage = ({ onNavigate, onLogout }) => {
           <h1 className="leaderboard-title">My Scores</h1>
         </div>
 
-        {bestScore && (
+        {bestScore !== null && bestScore > 0 && (
           <div className="best-score">
             <h2>Best Score: {bestScore}%</h2>
           </div>
@@ -347,9 +408,9 @@ const MyScoresPage = ({ onNavigate, onLogout }) => {
               {scores.map((score, index) => (
                 <tr key={score.id || index}>
                   <td>{index + 1}</td>
-                  <td>{score.score}%</td>
-                  <td>{score.skills_count}</td>
-                  <td>{score.experience_years} yrs</td>
+                  <td><strong>{score.score}%</strong></td>
+                  <td>{score.skills_count || 0}</td>
+                  <td>{score.experience_years || 0} yrs</td>
                   <td>{new Date(score.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
@@ -367,12 +428,12 @@ const LeaderboardPage = ({ onNavigate, onLogout }) => {
 
   useEffect(() => {
     loadLeaderboard();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadLeaderboard = async () => {
     try {
       const data = await apiService.getLeaderboard();
-      setLeaderboardData(data.leaderboard);
+      setLeaderboardData(data.leaderboard || []);
     } catch (err) {
       console.error('Failed to load leaderboard:', err);
     } finally {
@@ -391,9 +452,9 @@ const LeaderboardPage = ({ onNavigate, onLogout }) => {
     <div className="page-container">
       <div className="header">
         <div className="logo">
-          <img src='/mlsc.png' alt='logo' height={60}></img>
+          <img src='/mlsc.png' alt='logo' height={60} />
         </div>
-        <button className="logout-button" onClick={onLogout}>⊗</button>
+        <button className="logout-button" onClick={onLogout} title="Logout">⊗</button>
       </div>
 
       <div className="leaderboard-content">
@@ -411,7 +472,7 @@ const LeaderboardPage = ({ onNavigate, onLogout }) => {
             <thead>
               <tr>
                 <th>Rank</th>
-                <th>Email</th>
+                <th>Name</th>
                 <th>Score</th>
                 <th>Skills</th>
                 <th>Experience</th>
@@ -419,12 +480,12 @@ const LeaderboardPage = ({ onNavigate, onLogout }) => {
             </thead>
             <tbody>
               {leaderboardData.map((entry) => (
-                <tr key={entry.rank}>
+                <tr key={entry.rank || entry.email}>
                   <td>{entry.rank} {getMedalEmoji(entry.rank)}</td>
-                  <td>{entry.email}</td>
-                  <td>{entry.score}%</td>
-                  <td>{entry.skills_count}</td>
-                  <td>{entry.experience} yrs</td>
+                  <td>{entry.name || entry.email}</td>
+                  <td><strong>{entry.score}%</strong></td>
+                  <td>{entry.skills_count || 0}</td>
+                  <td>{entry.experience_years || entry.experience || 0} yrs</td>
                 </tr>
               ))}
             </tbody>
@@ -437,7 +498,6 @@ const LeaderboardPage = ({ onNavigate, onLogout }) => {
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState('login');
-  const [participantData, setParticipantData] = useState(null);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -447,14 +507,12 @@ const App = () => {
     }
   }, []);
 
-  const handleLogin = (data) => {
-    setParticipantData(data);
+  const handleLogin = () => {
     setCurrentPage('home');
   };
 
   const handleLogout = () => {
     localStorage.clear();
-    setParticipantData(null);
     setCurrentPage('login');
   };
 
